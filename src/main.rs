@@ -17,7 +17,7 @@ struct Options {
     no_walk: bool,
     #[structopt(subcommand)]
     command: Option<Command>,
-    /// Either adds tags to the edited time (start, stop) or filters by them (, stats).
+    /// Either adds tags to the tracked time (start) or filters by them (, stats, stop).
     #[structopt(short, long)]
     tags: Vec<String>,
 }
