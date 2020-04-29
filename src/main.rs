@@ -1,4 +1,4 @@
-use {atty::Stream, structopt::StructOpt};
+use {atty::Stream, structopt::StructOpt, tok};
 
 /// Simple-ish time tracking from the command line.
 ///
@@ -22,7 +22,7 @@ struct Options {
     tags: Vec<String>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, PartialEq)]
 enum Command {
     /// Print current status information.
     #[structopt(name = "")]
@@ -55,4 +55,12 @@ fn main() {
     } else {
         atty::is(Stream::Stdout)
     };
+
+    let command = options.command.unwrap_or(Command::None);
+
+    if command == Command::Init {
+        drop(tok::init().unwrap());
+        println!("Created tracking file in current directory. Have fun!");
+        return;
+    }
 }

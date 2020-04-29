@@ -1,14 +1,20 @@
 use std::{
     env::current_dir,
+    fs::{File, OpenOptions},
     io::{Error as ioError, ErrorKind as ioErrorKind},
     path::PathBuf,
 };
 
-pub enum FindTrackingFileError {
-    IoError(ioError),
+// Creates a new .tok-tracker file in the current directory and opens it in read-write mode.
+pub fn init() -> Result<File, ioError> {
+    OpenOptions::new()
+        .create_new(true)
+        .read(true)
+        .write(true)
+        .open(".tok-tracker")
 }
 
-/// Finds the nearest `.tok-tracker` file starting at the current working directory.
+/// Finds the nearest `.tok-tracker` file starting at the current directory.
 pub fn find_tracking_file(walk_parents: bool) -> Result<PathBuf, ioError> {
     let current_directory = current_dir()?;
     let mut current_directory = current_directory.as_path();
@@ -28,7 +34,7 @@ pub fn find_tracking_file(walk_parents: bool) -> Result<PathBuf, ioError> {
         } else {
             return Err(ioError::new(
                 ioErrorKind::NotFound,
-                "Not found in current working directory",
+                "Not found in current directory",
             ));
         }
     }
