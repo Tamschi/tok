@@ -17,8 +17,7 @@ struct Options {
     no_walk: bool,
     #[structopt(subcommand)]
     command: Option<Command>,
-    /// Either adds tags to the tracked time (start) or filters by them (, stats, stop).
-    #[structopt(short, long)]
+    #[structopt(short, long, help = "Either adds tags to the tracked time (start) or filters by them (, stats, stop).\nPrefix tags with ! for negative filters.")]
     tags: Vec<String>,
 }
 
