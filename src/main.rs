@@ -1,4 +1,4 @@
-use {atty::Stream, structopt::StructOpt, tok};
+use {atty::Stream, std::fs::File, structopt::StructOpt, tok};
 
 /// Simple-ish time tracking from the command line.
 ///
@@ -6,18 +6,22 @@ use {atty::Stream, structopt::StructOpt, tok};
 #[derive(Debug, StructOpt)]
 #[structopt(author)]
 struct Options {
-    /// Enables colour.
+    /// Enables colour
     #[structopt(short, long)]
     color: bool,
-    /// Disables colour. Overrides --color.
-    #[structopt(short = "C", long)]
+    /// Disables colour
+    /// Overrides --color
+    #[structopt(short = "C", long, verbatim_doc_comment)]
     no_color: bool,
-    /// Disables searching parent directory chain for time tracking files.
+    /// Disables searching parent directory chain for time tracking files
     #[structopt(short = "W", long)]
     no_walk: bool,
     #[structopt(subcommand)]
     command: Option<Command>,
-    #[structopt(short, long, help = "Either adds tags to the tracked time (start) or filters by them (, stats, stop).\nPrefix tags with ! for negative filters.")]
+    /// Either adds tags to the tracked time (start) or filters by them (, stats, stop)
+    /// Separate with ,
+    /// Prefix tags with ! for negative filters
+    #[structopt(short, long, verbatim_doc_comment)]
     tags: Vec<String>,
 }
 
@@ -42,6 +46,8 @@ enum Command {
     },
     /// Displays various tallies.
     Stats,
+    /// Rewrites the time tracking file with canonical formatting.
+    Touch,
 }
 
 fn main() {
@@ -62,4 +68,16 @@ fn main() {
         println!("Created tracking file in current directory. Have fun!");
         return;
     }
+
+    let file_path =
+        tok::find_tracking_file(!options.no_walk).expect("Failed to find tracking file.");
+    let old_file = File::open(file_path).expect("Could not open tracking file");
+
+    let tags: Vec<String> = options
+        .tags
+        .into_iter()
+        .flat_map(|t| t.split(',').map(|t| t.to_string()).collect::<Vec<_>>())
+        .collect();
+
+    let data = ();
 }

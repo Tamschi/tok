@@ -1,9 +1,70 @@
-use std::{
-    env::current_dir,
-    fs::{File, OpenOptions},
-    io::{Error as ioError, ErrorKind as ioErrorKind},
-    path::PathBuf,
+use {
+    core::{
+        fmt::Display,
+        ops::{Range, RangeFrom},
+    },
+    cow_utils::CowUtils,
+    std::{
+        env::current_dir,
+        fs::{File, OpenOptions},
+        io::{Error as ioError, ErrorKind as ioErrorKind},
+        path::PathBuf,
+    },
+    time::OffsetDateTime,
 };
+
+mod parser;
+
+const TIMESTAMP_FORMAT: &str = "%_Y-%_m-%_d %_H:%M:%S %z";
+
+struct Entry {
+    span: Span,
+    tags: Vec<String>,
+    comments: Vec<String>,
+}
+
+impl Display for Entry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}", self.span))?;
+        if !self.tags.is_empty() {
+            let mut iter = self.tags.iter();
+            f.write_fmt(format_args!("({}", iter.next().unwrap()))?;
+            iter.try_for_each(|tag| f.write_fmt(format_args!(",{}", tag)))?;
+            f.write_str(")")?;
+        }
+        self.comments.iter().try_for_each(|comment| {
+            f.write_fmt(format_args!(
+                "#{}",
+                comment
+                    .cow_replace('\\', "\\\\")
+                    .cow_replace('#', "\\#")
+                    .cow_replace('\r', "\\r")
+                    .cow_replace('\n', "\\n")
+            ))
+        })?;
+        Ok(())
+    }
+}
+
+enum Span {
+    Active(RangeFrom<OffsetDateTime>),
+    Closed(Range<OffsetDateTime>),
+}
+
+impl Display for Span {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Span::Active(RangeFrom { start }) => {
+                f.write_fmt(format_args!("{}..", start.lazy_format(TIMESTAMP_FORMAT)))
+            }
+            Span::Closed(Range { start, end }) => f.write_fmt(format_args!(
+                "{}..{}",
+                start.lazy_format(TIMESTAMP_FORMAT),
+                end.lazy_format(TIMESTAMP_FORMAT)
+            )),
+        }
+    }
+}
 
 // Creates a new .tok-tracker file in the current directory and opens it in read-write mode.
 pub fn init() -> Result<File, ioError> {
