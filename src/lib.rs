@@ -3,7 +3,7 @@ use {
         fmt::Display,
         ops::{Range, RangeFrom},
     },
-    cow_utils::CowUtils,
+    lazy_string_replace::{LazyReplace, LazyReplaceDisplay},
     std::{
         env::current_dir,
         fs::{File, OpenOptions},
@@ -36,10 +36,10 @@ impl Display for Entry {
             f.write_fmt(format_args!(
                 "#{}",
                 comment
-                    .cow_replace('\\', "\\\\")
-                    .cow_replace('#', "\\#")
-                    .cow_replace('\r', "\\r")
-                    .cow_replace('\n', "\\n")
+                    .lazy_replace('\\', "\\\\")
+                    .replace_display("#", "\\#")
+                    .replace_display("\r", "\\r")
+                    .replace_display("\n", "\\n")
             ))
         })?;
         Ok(())
