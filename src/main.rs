@@ -1,4 +1,9 @@
-use {atty::Stream, std::fs::File, structopt::StructOpt, tok};
+use {
+    atty::Stream,
+    std::fs::File,
+    structopt::StructOpt,
+    tok::{self, Entry, Span},
+};
 
 /// Simple-ish time tracking from the command line.
 ///
@@ -50,6 +55,7 @@ enum Command {
     Touch,
 }
 
+#[allow(unreachable_code)]
 fn main() {
     let options = Options::from_args();
 
@@ -79,5 +85,42 @@ fn main() {
         .flat_map(|t| t.split(',').map(|t| t.to_string()).collect::<Vec<_>>())
         .collect();
 
-    let data = ();
+    let data: Vec<tok::Entry> = vec![]; //TODO
+
+    use Command::*;
+    match command {
+        None => {
+            if data.into_iter().all(|entry| match entry {
+                Entry {
+                    span: Span::Active { start },
+                    tags,
+                    comments,
+                } => {
+                    println!(
+                        "Tracking{} since {} ({} comments)",
+                        if tags.is_empty() {
+                            "".to_owned()
+                        } else {
+                            format!(" ({})", tags.join(","))
+                        },
+                        start,
+                        comments.len()
+                    );
+                    false
+                }
+                Entry {
+                    span: Span::Closed { .. },
+                    ..
+                } => true,
+            }) {
+                println!("No open time spans.")
+            }
+            return;
+        }
+        Init => unreachable!(),
+        Start { comment } => todo!(),
+        Stop { comment } => todo!(),
+        Stats => todo!(),
+        Touch => todo!(),
+    }
 }

@@ -1,8 +1,5 @@
 use {
-    core::{
-        fmt::Display,
-        ops::{Range, RangeFrom},
-    },
+    core::fmt::Display,
     lazy_string_replace::{LazyReplace, LazyReplaceDisplay},
     std::{
         env::current_dir,
@@ -17,10 +14,10 @@ mod parser;
 
 const TIMESTAMP_FORMAT: &str = "%_Y-%_m-%_d %_H:%M:%S %z";
 
-struct Entry {
-    span: Span,
-    tags: Vec<String>,
-    comments: Vec<String>,
+pub struct Entry {
+    pub span: Span,
+    pub tags: Vec<String>,
+    pub comments: Vec<String>,
 }
 
 impl Display for Entry {
@@ -46,18 +43,23 @@ impl Display for Entry {
     }
 }
 
-enum Span {
-    Active(RangeFrom<OffsetDateTime>),
-    Closed(Range<OffsetDateTime>),
+pub enum Span {
+    Active {
+        start: OffsetDateTime,
+    },
+    Closed {
+        start: OffsetDateTime,
+        end: OffsetDateTime,
+    },
 }
 
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Span::Active(RangeFrom { start }) => {
+            Span::Active { start } => {
                 f.write_fmt(format_args!("{}..", start.lazy_format(TIMESTAMP_FORMAT)))
             }
-            Span::Closed(Range { start, end }) => f.write_fmt(format_args!(
+            Span::Closed { start, end } => f.write_fmt(format_args!(
                 "{}..{}",
                 start.lazy_format(TIMESTAMP_FORMAT),
                 end.lazy_format(TIMESTAMP_FORMAT)
@@ -80,7 +82,7 @@ pub fn find_tracking_file(walk_parents: bool) -> Result<PathBuf, ioError> {
     let current_directory = current_dir()?;
     let mut current_directory = current_directory.as_path();
     loop {
-        let file_path = current_directory.with_file_name(".tok-tracker");
+        let file_path = current_directory.join(".tok-tracker");
         if file_path.is_file() {
             return Ok(file_path);
         } else if walk_parents {
