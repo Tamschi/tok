@@ -42,15 +42,15 @@ enum Command {
     Init,
     /// Start tracking time.
     Start {
-        /// Adds a comment to the new time range.
+        /// Adds comments to the new time range.
         #[structopt(short, long)]
-        comment: Option<String>,
+        comments: Vec<String>,
     },
     /// Stop tracking time.
     Stop {
-        /// Adds a comment to the finished time range.
+        /// Adds comments to each finished time range.
         #[structopt(short, long)]
-        comment: Option<String>,
+        comments: Vec<String>,
     },
     /// Displays various tallies.
     Stats,
@@ -123,8 +123,23 @@ fn main() {
             return;
         }
         Init => unreachable!(),
-        Start { comment } => todo!(),
-        Stop { comment } => todo!(),
+        Start { comments } => {
+            assert!(
+                !tags.iter().any(|t| t.starts_with('!')),
+                "Found tag starting with !"
+            );
+            let mut data: Vec<Entry> = data.into_iter().collect();
+            data.push(Entry {
+                span: Span::Active {
+                    start: time::OffsetDateTime::try_now_local()
+                        .expect("Could not determine time zone offset"),
+                },
+                tags,
+                comments,
+            });
+            data
+        }
+        Stop { comments } => todo!(),
         Stats => todo!(),
         Touch => data,
     };
