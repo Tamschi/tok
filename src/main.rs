@@ -1,6 +1,9 @@
 use {
     atty::Stream,
-    std::fs::File,
+    std::{
+        fs::{self, File},
+        io::Write,
+    },
     structopt::StructOpt,
     tok::{self, Entry, Span},
 };
@@ -77,7 +80,7 @@ fn main() {
 
     let file_path =
         tok::find_tracking_file(!options.no_walk).expect("Failed to find tracking file.");
-    let old_file = File::open(file_path).expect("Could not open tracking file");
+    let old_file = File::open(&file_path).expect("Could not open tracking file");
 
     let tags: Vec<String> = options
         .tags
@@ -87,8 +90,10 @@ fn main() {
 
     let data: Vec<tok::Entry> = vec![]; //TODO
 
+    drop(old_file);
+
     use Command::*;
-    match command {
+    let data: Vec<tok::Entry> = match command {
         None => {
             if data.into_iter().all(|entry| match entry {
                 Entry {
@@ -121,6 +126,21 @@ fn main() {
         Start { comment } => todo!(),
         Stop { comment } => todo!(),
         Stats => todo!(),
-        Touch => todo!(),
-    }
+        Touch => data,
+    };
+
+    let mut temp_name = file_path.file_name().unwrap().to_owned();
+    temp_name.push(".temp");
+    let temp_path = file_path.with_file_name(temp_name);
+
+    let mut temp_file = File::create(&temp_path).expect("Could not create temp file");
+    data.into_iter()
+        .try_for_each(|entry| writeln!(&mut temp_file, "{}", entry))
+        .expect("Could not write data");
+
+    let mut bak_name = file_path.file_name().unwrap().to_owned();
+    bak_name.push(".bak");
+    fs::copy(&file_path, file_path.with_file_name(bak_name)).expect("Could not create backup");
+
+    fs::rename(temp_path, file_path).expect("Could not replace tracker file");
 }
