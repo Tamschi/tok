@@ -26,3 +26,6 @@ time = { version = "0.2.11", default-features = false, features = ["std"] }
 [features]
 bin-dependencies = ["console", "simple_logger", "structopt"]
 default = ["bin-dependencies"]
+
+[patch.crates-io]
+lazy-string-replace = { git = "https://github.com/Tamschi/lazy-string-replace", rev = "46920941ef52332f0e9def60633f0e8e59ed0e01" }
