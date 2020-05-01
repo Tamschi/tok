@@ -3,9 +3,9 @@ use {
     lazy_string_replace::{LazyReplace, LazyReplaceDisplay},
     std::{
         env::current_dir,
-        fs::{File, OpenOptions},
-        io::{Error as ioError, ErrorKind as ioErrorKind},
-        path::PathBuf,
+        fs::{self, File, OpenOptions},
+        io::{Error as ioError, ErrorKind as ioErrorKind, Result as ioResult, Write},
+        path::{Path, PathBuf},
     },
     time::OffsetDateTime,
 };
@@ -101,4 +101,31 @@ pub fn find_tracking_file(walk_parents: bool) -> Result<PathBuf, ioError> {
             ));
         }
     }
+}
+
+/// Replaces a tracking file atomically.
+/// This also creates a matching .bak file with the previous content, or overwrites it if already present.
+///
+/// # Panics
+/// This function panics if `tracking_file_path` isn't a sensible file path.
+pub fn update(tracking_file_path: &Path, entries: &[Entry]) -> ioResult<()> {
+    let mut temp_name = tracking_file_path.file_name().unwrap().to_owned();
+    temp_name.push(".temp");
+    let temp_path = tracking_file_path.with_file_name(temp_name);
+
+    let mut temp_file = File::create(&temp_path)?;
+    entries
+        .iter()
+        .try_for_each(|entry| writeln!(&mut temp_file, "{}", entry))?;
+
+    let mut bak_name = tracking_file_path.file_name().unwrap().to_owned();
+    bak_name.push(".bak");
+    fs::copy(
+        &tracking_file_path,
+        tracking_file_path.with_file_name(bak_name),
+    )?;
+
+    fs::rename(temp_path, tracking_file_path)?;
+
+    Ok(())
 }

@@ -1,9 +1,6 @@
 use {
     atty::Stream,
-    std::{
-        fs::{self, File},
-        io::Write,
-    },
+    std::fs::File,
     structopt::StructOpt,
     tok::{self, Entry, Span},
 };
@@ -149,18 +146,5 @@ fn main() {
         Touch => data,
     };
 
-    let mut temp_name = file_path.file_name().unwrap().to_owned();
-    temp_name.push(".temp");
-    let temp_path = file_path.with_file_name(temp_name);
-
-    let mut temp_file = File::create(&temp_path).expect("Could not create temp file");
-    data.into_iter()
-        .try_for_each(|entry| writeln!(&mut temp_file, "{}", entry))
-        .expect("Could not write data");
-
-    let mut bak_name = file_path.file_name().unwrap().to_owned();
-    bak_name.push(".bak");
-    fs::copy(&file_path, file_path.with_file_name(bak_name)).expect("Could not create backup");
-
-    fs::rename(temp_path, file_path).expect("Could not replace tracker file");
+    tok::update(&file_path, data.as_slice()).expect("Could not update tracking file");
 }
