@@ -30,13 +30,13 @@ struct Options {
     /// Separate with ,
     /// Prefix tags with ! for negative filters
     #[structopt(short, long, verbatim_doc_comment)]
-    tags: Vec<String>,
+    tags: Option<String>,
 }
 
 #[derive(Debug, StructOpt, PartialEq)]
 enum Command {
     /// Print current status information.
-    #[structopt(name = "")]
+    #[structopt(name = "(none)")]
     None,
     /// Create a time tracking file (.tok-tracker) in the current working directory.
     Init,
@@ -122,7 +122,9 @@ fn main() {
             }
             return;
         }
+
         Init => unreachable!(),
+
         Start { comments } => {
             assert!(
                 !tags.iter().any(|t| t.starts_with('!')),
@@ -139,8 +141,11 @@ fn main() {
             });
             data
         }
+
         Stop { comments } => todo!(),
+
         Stats => todo!(),
+
         Touch => data,
     };
 
