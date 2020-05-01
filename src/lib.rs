@@ -1,10 +1,10 @@
 use {
     core::fmt::Display,
-    lazy_string_replace::{LazyReplace, LazyReplaceDisplay},
+    lazy_string_replace::{LazyReplace as _, LazyReplaceDisplay as _},
     std::{
         env::current_dir,
         fs::{self, File, OpenOptions},
-        io::{Error as ioError, ErrorKind as ioErrorKind, Result as ioResult, Write},
+        io::{Error as ioError, ErrorKind as ioErrorKind, Result as ioResult, Write as _},
         path::{Path, PathBuf},
     },
     time::OffsetDateTime,
