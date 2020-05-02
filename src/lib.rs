@@ -103,20 +103,32 @@ pub fn find_tracking_file(walk_parents: bool) -> Result<PathBuf, ioError> {
     }
 }
 
+pub fn load(tracking_file_path: &Path) -> ioResult<Vec<Entry>> {
+    Ok(parser::parse(&fs::read_to_string(tracking_file_path)?)
+        .expect("TODO")
+        .1)
+}
+
 /// Replaces a tracking file atomically.
 /// This also creates a matching .bak file with the previous content, or overwrites it if already present.
 ///
 /// # Panics
-/// This function panics if `tracking_file_path` isn't a sensible file path.
+/// This function panics if:
+/// - `tracking_file_path` isn't a sensible file path.
+/// - Any tags contain `)`.
 pub fn update(tracking_file_path: &Path, entries: &[Entry]) -> ioResult<()> {
     let mut temp_name = tracking_file_path.file_name().unwrap().to_owned();
     temp_name.push(".temp");
     let temp_path = tracking_file_path.with_file_name(temp_name);
 
     let mut temp_file = File::create(&temp_path)?;
-    entries
-        .iter()
-        .try_for_each(|entry| writeln!(&mut temp_file, "{}", entry))?;
+    entries.iter().try_for_each(|entry| {
+        entry
+            .tags
+            .iter()
+            .for_each(|tag| assert!(!tag.contains(")")));
+        writeln!(&mut temp_file, "{}", entry)
+    })?;
 
     let mut bak_name = tracking_file_path.file_name().unwrap().to_owned();
     bak_name.push(".bak");

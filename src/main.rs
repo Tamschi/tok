@@ -77,7 +77,6 @@ fn main() {
 
     let file_path =
         tok::find_tracking_file(!options.no_walk).expect("Failed to find tracking file.");
-    let old_file = File::open(&file_path).expect("Could not open tracking file");
 
     let tags: Vec<String> = options
         .tags
@@ -85,7 +84,7 @@ fn main() {
         .flat_map(|t| t.split(',').map(|t| t.to_string()).collect::<Vec<_>>())
         .collect();
 
-    let data: Vec<tok::Entry> = vec![]; //TODO
+    let data: Vec<tok::Entry> = tok::load(file_path).expect("Could not load tracking file content");
 
     drop(old_file);
 
