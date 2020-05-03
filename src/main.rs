@@ -130,10 +130,16 @@ fn main() {
             let data = data
                 .into_iter()
                 .map(|entry| {
-                    if tags
-                        .iter()
-                        .all(|tag0| entry.tags.iter().any(|tag1| tag0 == tag1))
-                    {
+                    let tag_match = tags.iter().all(|arg_tag| {
+                        if arg_tag.starts_with('!') {
+                            assert!(!(&arg_tag[1..]).contains('!'), "Tags must not contain !");
+                            entry.tags.iter().all(|entry_tag| &arg_tag[1..] != entry_tag)
+                        } else {
+                            assert!(!arg_tag.contains('!'), "Tags must not contain !");
+                            entry.tags.iter().any(|entry_tag| arg_tag == entry_tag)
+                        }
+                    });
+                    if tag_match {
                         match entry.span {
                             Span::Active { start } => {
                                 stopped_count += 1;
