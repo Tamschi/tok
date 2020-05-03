@@ -171,7 +171,28 @@ fn main() {
             })
             .collect(),
 
-        Stats => todo!(),
+        Stats => {
+            data.into_iter().for_each(|entry| {
+                println!(
+                    "{}\t{}\t({})\t{}",
+                    entry.span.start(),
+                    entry
+                        .span
+                        .duration()
+                        .map_or("".to_owned(), |duration| format!(
+                            "{}h{}min",
+                            duration.whole_hours(),
+                            duration.whole_minutes()
+                        )),
+                    entry.tags.join(","),
+                    std::iter::repeat("#")
+                        .zip(entry.comments.iter())
+                        .flat_map(|(a, b)| a.chars().chain(b.chars()))
+                        .collect::<String>()
+                )
+            });
+            return;
+        }
 
         Touch => data,
     };

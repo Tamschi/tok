@@ -7,7 +7,7 @@ use {
         io::{Error as ioError, ErrorKind as ioErrorKind, Result as ioResult, Write as _},
         path::{Path, PathBuf},
     },
-    time::OffsetDateTime,
+    time::{Duration, OffsetDateTime},
 };
 
 mod parser;
@@ -53,6 +53,21 @@ pub enum Span {
         start: OffsetDateTime,
         end: OffsetDateTime,
     },
+}
+
+impl Span {
+    pub fn start(&self) -> &OffsetDateTime {
+        match self {
+            Span::Active { start } | Span::Closed { start, .. } => &start,
+        }
+    }
+
+    pub fn duration(&self) -> Option<Duration> {
+        match self {
+            Span::Active { .. } => None,
+            Span::Closed { start, end } => Some(*end - *start),
+        }
+    }
 }
 
 impl Display for Span {
