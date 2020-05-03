@@ -1,5 +1,4 @@
 use {
-    atty::Stream,
     structopt::StructOpt,
     tok::{self, Entry, Span},
 };
@@ -126,35 +125,41 @@ fn main() {
             data
         }
 
-        Stop { comments } => data
-            .into_iter()
-            .map(|entry| {
-                if tags
-                    .iter()
-                    .all(|tag0| entry.tags.iter().any(|tag1| tag0 == tag1))
-                {
-                    match entry.span {
-                        Span::Active { start } => {
-                            return Entry {
-                                span: Span::Closed {
-                                    start,
-                                    end: time::OffsetDateTime::try_now_local()
-                                        .expect("Could not determine time zone offset"),
-                                },
-                                comments: entry
-                                    .comments
-                                    .into_iter()
-                                    .chain(comments.iter().cloned())
-                                    .collect(),
-                                ..entry
+        Stop { comments } => {
+            let mut stopped_count = 0;
+            let data = data
+                .into_iter()
+                .map(|entry| {
+                    if tags
+                        .iter()
+                        .all(|tag0| entry.tags.iter().any(|tag1| tag0 == tag1))
+                    {
+                        match entry.span {
+                            Span::Active { start } => {
+                                stopped_count += 1;
+                                return Entry {
+                                    span: Span::Closed {
+                                        start,
+                                        end: time::OffsetDateTime::try_now_local()
+                                            .expect("Could not determine time zone offset"),
+                                    },
+                                    comments: entry
+                                        .comments
+                                        .into_iter()
+                                        .chain(comments.iter().cloned())
+                                        .collect(),
+                                    ..entry
+                                };
                             }
+                            Span::Closed { .. } => (),
                         }
-                        Span::Closed { .. } => (),
                     }
-                }
-                entry
-            })
-            .collect(),
+                    entry
+                })
+                .collect();
+            println!("Stopped {}.", stopped_count);
+            data
+        }
 
         Stats => {
             //TODO?: This part is very rudimentary.
