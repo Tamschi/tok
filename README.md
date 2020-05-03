@@ -14,7 +14,7 @@ or use a binary from <https://github.com/Tamschi/tok/releases>.
 
 ```txt
 >tok help
-tok 0.0.0-dev
+tok 1.0.0
 Tamme Schichler <tamme@schichler.dev>
 Simple-ish time tracking from the command line.
 
@@ -43,7 +43,7 @@ SUBCOMMANDS:
     touch     Rewrites the time tracking file with canonical formatting
 
 >tok help start
-tok-start 0.0.0-dev
+tok-start 1.0.0
 Start tracking time
 
 USAGE:
@@ -57,7 +57,7 @@ OPTIONS:
     -c, --comments <comments>...    Adds comments to the new time range
 
 >tok help stop
-tok-stop 0.0.0-dev
+tok-stop 1.0.0
 Stop tracking time
 
 USAGE:
@@ -70,3 +70,41 @@ FLAGS:
 OPTIONS:
     -c, --comments <comments>...    Adds comments to each finished time range
 ```
+
+## Example
+
+```cmd
+C:\Users\Tamme>tok init
+Created tracking file in current directory. Have fun!
+
+C:\Users\Tamme>tok -t work,home start
+
+C:\Users\Tamme>tok stop -c "That's it for today!"
+Stopped 1.
+
+C:\Users\Tamme>tok stats
+2020-05-03 15:11:48 +2  0h4min  (work,home)     #That's it for today!
+```
+
+## Versioning
+
+Tok uses semantic versioning, with the following exceptions:
+
+- Program output is not versioned (except return codes, which are).
+- Changes to the `.tok-tracker` file format are only considered breaking if previous versions of Tok fail to read them.
+
+## Library
+
+Tok's tracker file layer is a library crate you can use to write compatible tools:
+
+```toml
+[dependencies]
+tok = { git = "https://github.com/Tamschi/tok", branch = "1" }
+```
+
+(However, I haven't sorted out licensing yet. Consider waiting until I do.)
+
+## License
+
+Until I find an appropriate license for this project, it is licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/).  
+This should for now give you enough room to use the program, but doesn't work for accepting contributions.

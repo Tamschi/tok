@@ -169,6 +169,7 @@ fn main() {
 
         Stats => {
             //TODO?: This part is very rudimentary.
+            //TODO: Filter by tags.
             data.into_iter().for_each(|entry| {
                 println!(
                     "{}\t{}\t({})\t{}",

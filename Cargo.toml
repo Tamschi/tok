@@ -1,6 +1,6 @@
 [package]
 name = "tok"
-version = "0.0.0-dev"
+version = "1.0.0"
 authors = ["Tamme Schichler <tamme@schichler.dev>"]
 edition = "2018"
 
