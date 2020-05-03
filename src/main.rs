@@ -10,13 +10,6 @@ use {
 #[derive(Debug, StructOpt)]
 #[structopt(author)]
 struct Options {
-    /// Enables colour
-    #[structopt(short, long)]
-    color: bool,
-    /// Disables colour
-    /// Overrides --color
-    #[structopt(short = "C", long, verbatim_doc_comment)]
-    no_color: bool,
     /// Disables searching parent directory chain for time tracking files
     #[structopt(short = "W", long)]
     no_walk: bool,
@@ -57,14 +50,6 @@ enum Command {
 #[allow(unreachable_code)]
 fn main() {
     let options = Options::from_args();
-
-    let _color = if options.no_color {
-        false
-    } else if options.color {
-        true
-    } else {
-        atty::is(Stream::Stdout)
-    };
 
     let command = options.command.unwrap_or(Command::None);
 
@@ -172,6 +157,7 @@ fn main() {
             .collect(),
 
         Stats => {
+            //TODO?: This part is very rudimentary.
             data.into_iter().for_each(|entry| {
                 println!(
                     "{}\t{}\t({})\t{}",
