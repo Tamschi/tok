@@ -89,29 +89,34 @@ fn main() {
     use Command::*;
     let data: Vec<tok::Entry> = match command {
         None => {
-            if data.into_iter().all(|entry| match entry {
-                Entry {
-                    span: Span::Active { start },
-                    tags,
-                    comments,
-                } => {
-                    println!(
-                        "Tracking{} since {} ({} comments)",
-                        if tags.is_empty() {
-                            "".to_owned()
-                        } else {
-                            format!(" ({})", tags.join(","))
-                        },
-                        start,
-                        comments.len()
-                    );
-                    false
-                }
-                Entry {
-                    span: Span::Closed { .. },
-                    ..
-                } => true,
-            }) {
+            if data
+                .into_iter()
+                .filter(|entry| match entry {
+                    Entry {
+                        span: Span::Active { start },
+                        tags,
+                        comments,
+                    } => {
+                        println!(
+                            "Tracking{} since {} ({} comments)",
+                            if tags.is_empty() {
+                                "".to_owned()
+                            } else {
+                                format!(" ({})", tags.join(","))
+                            },
+                            start,
+                            comments.len()
+                        );
+                        true
+                    }
+                    Entry {
+                        span: Span::Closed { .. },
+                        ..
+                    } => false,
+                })
+                .count()
+                == 0
+            {
                 println!("No open time spans.")
             }
             return;
@@ -136,7 +141,35 @@ fn main() {
             data
         }
 
-        Stop { comments } => todo!(),
+        Stop { comments } => data
+            .into_iter()
+            .map(|entry| {
+                if tags
+                    .iter()
+                    .all(|tag0| entry.tags.iter().any(|tag1| tag0 == tag1))
+                {
+                    match entry.span {
+                        Span::Active { start } => {
+                            return Entry {
+                                span: Span::Closed {
+                                    start,
+                                    end: time::OffsetDateTime::try_now_local()
+                                        .expect("Could not determine time zone offset"),
+                                },
+                                comments: entry
+                                    .comments
+                                    .into_iter()
+                                    .chain(comments.iter().cloned())
+                                    .collect(),
+                                ..entry
+                            }
+                        }
+                        Span::Closed { .. } => (),
+                    }
+                }
+                entry
+            })
+            .collect(),
 
         Stats => todo!(),
 
