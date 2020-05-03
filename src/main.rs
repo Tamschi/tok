@@ -1,6 +1,5 @@
 use {
     atty::Stream,
-    std::fs::File,
     structopt::StructOpt,
     tok::{self, Entry, Span},
 };
@@ -84,9 +83,8 @@ fn main() {
         .flat_map(|t| t.split(',').map(|t| t.to_string()).collect::<Vec<_>>())
         .collect();
 
-    let data: Vec<tok::Entry> = tok::load(file_path).expect("Could not load tracking file content");
-
-    drop(old_file);
+    let data: Vec<tok::Entry> =
+        tok::load(&file_path).expect("Could not load tracking file content");
 
     use Command::*;
     let data: Vec<tok::Entry> = match command {

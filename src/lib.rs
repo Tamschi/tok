@@ -14,6 +14,7 @@ mod parser;
 
 const TIMESTAMP_FORMAT: &str = "%_Y-%_m-%_d %_H:%M:%S %z";
 
+#[derive(Debug)]
 pub struct Entry {
     pub span: Span,
     pub tags: Vec<String>,
@@ -43,6 +44,7 @@ impl Display for Entry {
     }
 }
 
+#[derive(Debug)]
 pub enum Span {
     Active {
         start: OffsetDateTime,
@@ -126,7 +128,7 @@ pub fn update(tracking_file_path: &Path, entries: &[Entry]) -> ioResult<()> {
         entry
             .tags
             .iter()
-            .for_each(|tag| assert!(!tag.contains(")")));
+            .for_each(|tag| assert!(!tag.contains(')')));
         writeln!(&mut temp_file, "{}", entry)
     })?;
 

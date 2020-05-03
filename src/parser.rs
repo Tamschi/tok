@@ -2,22 +2,28 @@ use {
     crate::{Entry, Span},
     nom::{
         bytes::complete::{is_a, is_not, tag, take},
-        character::{
-            complete::{digit1, line_ending, not_line_ending, space0},
-        },
-        combinator::{all_consuming, map, map_parser, map_res, opt, recognize},
-        multi::{many0, separated_list, separated_nonempty_list},
+        character::complete::{digit1, line_ending, space0},
+        combinator::{all_consuming, map, map_opt, map_res, opt, recognize, rest_len},
+        multi::{many0, separated_nonempty_list},
         sequence::{delimited, preceded, terminated, tuple},
         IResult,
     },
-    time::{Date, Time, UtcOffset},
+    time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset},
 };
 
-pub fn parse(i: &str) -> IResult<&str, Vec<Entry>> {
-    let i32_ = map_res(digit1, |s: &str| s.parse::<i32>());
-    let u8_ = map_res(digit1, |s: &str| s.parse::<u8>());
+macro_rules! parser {
+    ($vis:vis $name:ident -> $output:ty = $body:expr) => {
+        $vis fn $name(i: &str) -> IResult<&str, $output> {
+            $body(i)
+        }
+    };
+}
 
-    let date = map_res(
+pub fn parse(i: &str) -> IResult<&str, Vec<Entry>> {
+    parser!(i32_ -> i32 = map_res(digit1, |s: &str| s.parse::<i32>()));
+    parser!(u8_ -> u8 = map_res(digit1, |s: &str| s.parse::<u8>()));
+
+    parser!(date -> Date = map_res(
         tuple((
             space0,
             i32_,
@@ -31,9 +37,9 @@ pub fn parse(i: &str) -> IResult<&str, Vec<Entry>> {
             &u8_,
         )),
         |(_, year, _, _, _, month, _, _, _, day)| Date::try_from_ymd(year, month, day),
-    );
+    ));
 
-    let time = map_res(
+    parser!(time -> Time = map_res(
         tuple((
             space0,
             &u8_,
@@ -47,42 +53,42 @@ pub fn parse(i: &str) -> IResult<&str, Vec<Entry>> {
             &u8_,
         )),
         |(_, hour, _, _, _, minute, _, _, _, second)| Time::try_from_hms(hour, minute, second),
-    );
+    ));
 
-    let primitive_date_time = map(tuple((date, time)), |(date, time)| date.with_time(time));
+    parser!(primitive_date_time -> PrimitiveDateTime = map(tuple((date, time)), |(date, time)| date.with_time(time)));
 
-    let sign = map(is_a("+-"), |sign| match sign {
+    parser!(sign -> i8 = map(is_a("+-"), |sign| match sign {
         "+" => 1i8,
         "-" => -1i8,
         _ => unreachable!(),
-    });
+    }));
 
-    let digit = map_res(take(1usize), |s: &str| s.parse::<u8>());
+    parser!(digit -> u8 = map_res(take(1usize), |s: &str| s.parse::<u8>()));
 
-    let offset = map(
+    parser!(offset -> UtcOffset = map(
         tuple((space0, sign, &digit, &digit, &digit, &digit)),
         |(_, sign, h10, h1, m10, m1)| {
             UtcOffset::minutes(
                 (sign as i16) * ((h10 as i16 * 10 + h1 as i16) * 60 + m10 as i16 * 10 + m1 as i16),
             )
         },
-    );
+    ));
 
-    let offset_date_time = map(
+    parser!(offset_date_time -> OffsetDateTime = map(
         tuple((primitive_date_time, offset)),
         //TODO: Is this correct?
         |(primitive_date_time, offset)| primitive_date_time.assume_offset(offset),
-    );
+    ));
 
-    let span = map(
+    parser!(span -> Span = map(
         tuple((&offset_date_time, space0, tag(".."), opt(&offset_date_time))),
         |(start, _, _, end)| match end {
             None => Span::Active { start },
             Some(end) => Span::Closed { start, end },
         },
-    );
+    ));
 
-    let tags = map(
+    parser!(tags -> Vec<&str> = map(
         preceded(
             space0,
             opt(delimited(
@@ -92,28 +98,40 @@ pub fn parse(i: &str) -> IResult<&str, Vec<Entry>> {
             )),
         ),
         |tags| tags.unwrap_or_else(|| vec![]),
-    );
-
-    let comment = preceded(tag("#"), recognize(many0(is_not("#\r\n"))));
-    let comments = preceded(space0, many0(comment));
-
-    let entry = map(tuple((span, tags, comments)), |(span, tags, comments)| {
-        Entry {
-            span,
-            tags: tags.into_iter().map(|t| t.to_owned()).collect(),
-            comments: comments.into_iter().map(|c| c.to_owned()).collect(),
-        }
-    });
-
-    let line = terminated(opt(entry), space0);
-    let file = all_consuming(separated_list(
-        line_ending,
-        map_parser(recognize(many0(not_line_ending)), all_consuming(line)),
     ));
 
-    let file_entries = map(file, |entries_per_line| {
-        entries_per_line.into_iter().filter_map(|e| e).collect()
-    });
+    parser!(comment -> &str = preceded(tag("#"), recognize(many0(is_not("#\r\n")))));
+    parser!(comments -> Vec<&str> = preceded(space0, many0(comment)));
+
+    parser!(
+        entry -> Entry = map(tuple((span, tags, comments)), |(span, tags, comments)| {
+            Entry {
+                span,
+                tags: tags.into_iter().map(|t| t.to_owned()).collect(),
+                comments: comments.into_iter().map(|c| c.to_owned()).collect(),
+            }
+        })
+    );
+
+    parser!(line -> Option<Entry> = terminated(opt(entry), tuple((space0, many0(line_ending)))));
+    parser!(file -> Vec<Option<Entry>> = all_consuming(
+        many0(
+            map_opt(
+                tuple((rest_len, line, rest_len)),
+                |(before, line, after)| if before > after {
+                    Some(line)
+                } else {
+                    None
+                }
+            ),
+        )
+    ));
+
+    parser!(
+        file_entries -> Vec<Entry> = map(file, |entries_per_line| {
+            entries_per_line.into_iter().filter_map(|e| e).collect()
+        })
+    );
 
     file_entries(i)
 }
