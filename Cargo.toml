@@ -1,6 +1,6 @@
 [package]
 name = "tok"
-version = "1.0.0"
+version = "1.0.1" # Also update in README.md
 authors = ["Tamme Schichler <tamme@schichler.dev>"]
 edition = "2018"
 

@@ -133,7 +133,10 @@ fn main() {
                     let tag_match = tags.iter().all(|arg_tag| {
                         if arg_tag.starts_with('!') {
                             assert!(!(&arg_tag[1..]).contains('!'), "Tags must not contain !");
-                            entry.tags.iter().all(|entry_tag| &arg_tag[1..] != entry_tag)
+                            entry
+                                .tags
+                                .iter()
+                                .all(|entry_tag| &arg_tag[1..] != entry_tag)
                         } else {
                             assert!(!arg_tag.contains('!'), "Tags must not contain !");
                             entry.tags.iter().any(|entry_tag| arg_tag == entry_tag)
@@ -180,7 +183,7 @@ fn main() {
                         .map_or("".to_owned(), |duration| format!(
                             "{}h{}min",
                             duration.whole_hours(),
-                            duration.whole_minutes()
+                            duration.whole_minutes() % 60
                         )),
                     entry.tags.join(","),
                     std::iter::repeat("#")

@@ -14,7 +14,7 @@ or use a binary from <https://github.com/Tamschi/tok/releases>.
 
 ```txt
 >tok help
-tok 1.0.0
+tok 1.0.1
 Tamme Schichler <tamme@schichler.dev>
 Simple-ish time tracking from the command line.
 
@@ -43,7 +43,7 @@ SUBCOMMANDS:
     touch     Rewrites the time tracking file with canonical formatting
 
 >tok help start
-tok-start 1.0.0
+tok-start 1.0.1
 Start tracking time
 
 USAGE:
@@ -57,7 +57,7 @@ OPTIONS:
     -c, --comments <comments>...    Adds comments to the new time range
 
 >tok help stop
-tok-stop 1.0.0
+tok-stop 1.0.1
 Stop tracking time
 
 USAGE:
